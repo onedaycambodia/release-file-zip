@@ -2,66 +2,114 @@
 <html lang="km">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>ZIP Splitter Tool</title>
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body {
-      margin: 0; padding: 20px;
-      background: #0f172a; color: #f8fafc;
-      display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
+    :root {
+      --bg:#0f172a; --card:#1e293b; --line:#334155; --muted:#94a3b8;
+      --accent:#38bdf8; --accent2:#0284c7; --ok:#10b981; --err:#f87171; --warn:#fbbf24;
     }
-    .card {
-      width: 100%; max-width: 480px;
-      background: #1e293b; border: 1px solid #334155;
-      border-radius: 16px; padding: 24px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-    }
-    h2 { margin: 0 0 6px; font-size: 22px; color: #38bdf8; }
-    p.sub { margin: 0 0 20px; font-size: 13px; color: #94a3b8; }
-    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #e2e8f0; }
-    input[type="file"], input[type="number"], select {
-      width: 100%; padding: 12px; margin-bottom: 16px;
-      background: #0f172a; border: 1px solid #475569;
-      border-radius: 10px; color: #fff; font-size: 15px;
-    }
-    button.primary {
-      width: 100%; padding: 14px; border: none; border-radius: 10px;
-      background: #0284c7; color: #fff; font-size: 16px; font-weight: 700;
-      cursor: pointer; transition: 0.2s;
-    }
-    button.primary:disabled { background: #475569; cursor: not-allowed; }
-    .status { margin-top: 14px; font-size: 14px; text-align: center; color: #fbbf24; }
-    .error { color: #f87171; }
-    .results { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-    .item {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #0f172a; border: 1px solid #334155;
-      padding: 12px 14px; border-radius: 10px;
-    }
-    .item-info { font-size: 13px; word-break: break-all; padding-right: 10px; }
-    .item-info span { display: block; color: #94a3b8; font-size: 12px; margin-top: 2px; }
-    .dl-btn {
-      background: #10b981; color: #052e16; text-decoration: none;
-      padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 13px;
-      white-space: nowrap;
-    }
+    * { box-sizing:border-box; font-family:"Noto Sans Khmer","Khmer OS Battambang","Khmer OS",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+    body { margin:0; padding:20px; background:radial-gradient(1200px 600px at 50% -10%,#16264a,#0f172a); color:#f8fafc;
+           display:flex; justify-content:center; align-items:flex-start; min-height:100vh; }
+    .card { width:100%; max-width:480px; background:var(--card); border:1px solid var(--line); border-radius:16px;
+            padding:24px; box-shadow:0 10px 25px rgba(0,0,0,.4); animation:rise .5s ease both; }
+    @keyframes rise { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+    h2 { margin:0 0 6px; font-size:22px; color:var(--accent); }
+    p.sub { margin:0 0 20px; font-size:13px; color:var(--muted); line-height:1.6; }
+    label { display:block; font-size:14px; font-weight:600; margin-bottom:6px; color:#e2e8f0; }
+    input[type=number], select { width:100%; padding:12px; margin-bottom:16px; background:var(--bg);
+      border:1px solid #475569; border-radius:10px; color:#fff; font-size:15px; }
+    input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+
+    /* Drop zone */
+    .drop { border:2px dashed #475569; border-radius:12px; padding:20px 14px; text-align:center; margin-bottom:16px;
+            cursor:pointer; transition:.2s; background:var(--bg); }
+    .drop:hover, .drop.drag { border-color:var(--accent); background:#0c1a33; transform:scale(1.01); }
+    .drop.ok { border-style:solid; border-color:var(--ok); }
+    .drop.bad { border-color:var(--err); animation:shake .4s; }
+    .drop b { display:block; font-size:14px; word-break:break-all; }
+    .drop small { color:var(--muted); font-size:12px; }
+    .drop input { display:none; }
+    @keyframes shake { 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+
+    button.primary { width:100%; padding:14px; border:none; border-radius:10px; background:var(--accent2); color:#fff;
+      font-size:16px; font-weight:700; cursor:pointer; transition:.2s; }
+    button.primary:hover:not(:disabled) { filter:brightness(1.15); transform:translateY(-1px); }
+    button.primary:disabled { background:#475569; cursor:not-allowed; }
+    button.ghost { background:none; border:1px solid #475569; color:#cbd5e1; border-radius:8px; padding:8px 14px;
+      cursor:pointer; font-size:13px; margin-top:12px; }
+
+    /* Progress panel */
+    #progress { display:none; text-align:center; margin-top:22px; }
+    #progress.show { display:block; animation:rise .4s ease both; }
+    .ring { position:relative; width:160px; height:160px; margin:0 auto 12px; }
+    .ring svg { transform:rotate(-90deg); width:100%; height:100%; overflow:visible; }
+    .ring .track { fill:none; stroke:#0f172a; stroke-width:10; }
+    .ring .bar { fill:none; stroke:url(#grad); stroke-width:10; stroke-linecap:round;
+                 stroke-dasharray:440; stroke-dashoffset:440; filter:drop-shadow(0 0 6px rgba(56,189,248,.6)); }
+    .ring.busy::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid var(--accent);
+                        opacity:.0; animation:pulse 1.6s ease-out infinite; }
+    @keyframes pulse { 0%{transform:scale(.92);opacity:.5} 100%{transform:scale(1.12);opacity:0} }
+    .pct { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+           font-size:38px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .pct small { font-size:18px; color:var(--muted); margin-left:2px; }
+    .ring.done .bar { stroke:var(--ok); filter:drop-shadow(0 0 8px rgba(16,185,129,.7)); }
+    .ring.fail .bar { stroke:var(--err); filter:none; }
+    .ring.done .pct { color:var(--ok); animation:pop .5s ease; }
+    .ring.fail .pct { color:var(--err); animation:shake .4s; }
+    @keyframes pop { 0%{transform:scale(.7)} 60%{transform:scale(1.15)} 100%{transform:scale(1)} }
+
+    .linebar { height:8px; border-radius:99px; background:var(--bg); overflow:hidden; margin:4px 0 12px; }
+    .linebar i { display:block; height:100%; width:0; background:linear-gradient(90deg,#0ea5e9,#38bdf8,#0ea5e9);
+                 background-size:200% 100%; animation:shimmer 1.2s linear infinite; border-radius:99px; }
+    .done ~ .linebar i, .linebar.done i { background:var(--ok); animation:none; }
+    .linebar.fail i { background:var(--err); animation:none; }
+    @keyframes shimmer { to{background-position:-200% 0} }
+
+    .steps { display:flex; justify-content:space-between; gap:4px; margin:10px 0; }
+    .step { flex:1; font-size:11px; color:#64748b; padding:6px 2px; border-radius:8px; background:var(--bg);
+            border:1px solid transparent; transition:.3s; }
+    .step.active { color:var(--accent); border-color:var(--accent); }
+    .step.done { color:var(--ok); }
+    .step.fail { color:var(--err); border-color:var(--err); }
+
+    .status { margin-top:6px; font-size:14px; color:var(--warn); min-height:20px; line-height:1.6; }
+    .status.ok { color:var(--ok); }
+    .status.error { color:var(--err); background:rgba(248,113,113,.08); border:1px solid rgba(248,113,113,.35);
+                    border-radius:10px; padding:10px 12px; text-align:left; word-break:break-word; }
+    .warn { margin-top:10px; font-size:12px; color:var(--warn); text-align:left; background:rgba(251,191,36,.08);
+            border:1px solid rgba(251,191,36,.3); border-radius:10px; padding:8px 12px; }
+
+    .results { margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+    .item { display:flex; justify-content:space-between; align-items:center; background:var(--bg);
+            border:1px solid var(--line); padding:12px 14px; border-radius:10px; text-align:left;
+            opacity:0; transform:translateY(8px); animation:rise .4s ease forwards; }
+    .item-info { font-size:13px; word-break:break-all; padding-right:10px; }
+    .item-info span { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+    .dl-btn { background:var(--ok); color:#052e16; text-decoration:none; padding:8px 14px; border-radius:8px;
+              font-weight:700; font-size:13px; white-space:nowrap; }
+    @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>ZIP Splitter Tool</h2>
-    <p class="sub">បំបែក File Zip ធំៗទៅជាភាគតូចៗសម្រាប់ទាញយកលើ iPhone</p>
+    <p class="sub">បំបែក File Zip ធំៗទៅជាភាគតូចៗសម្រាប់ទាញយកលើ iPhone (អតិបរមា {{ max_mb }} MB)</p>
 
-    <form id="splitForm">
+    <form id="splitForm" novalidate>
       <label>១. ជ្រើសរើស File (.zip)</label>
-      <input type="file" id="fileInput" name="file" accept=".zip,application/zip" required />
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="ជ្រើសរើស File Zip">
+        <b id="dropTitle">ចុចទីនេះ ឬ អូស File មកដាក់</b>
+        <small id="dropSub">គាំទ្រ .zip តែប៉ុណ្ណោះ</small>
+        <input type="file" id="fileInput" name="file" accept=".zip,application/zip,application/x-zip-compressed" />
+      </div>
 
-      <label>២. ចំនួន File ដែលចង់បំបែក</label>
-      <input type="number" name="parts" value="4" min="2" max="20" required />
+      <label for="parts">២. ចំនួន File ដែលចង់បំបែក (២–២០)</label>
+      <input type="number" id="parts" name="parts" value="4" min="2" max="20" />
 
-      <label>៣. ប្រភេទនៃការបំបែក</label>
-      <select name="mode">
+      <label for="mode">៣. ប្រភេទនៃការបំបែក</label>
+      <select id="mode" name="mode">
         <option value="standalone">File Zip ដាច់ដោយឡែកពីគ្នា (បើកមួយៗបាន)</option>
         <option value="raw">ភាគតភ្ជាប់គ្នា (.zip.001, .zip.002...)</option>
       </select>
@@ -69,54 +117,211 @@
       <button type="submit" class="primary" id="submitBtn">ចាប់ផ្តើមបំបែក File</button>
     </form>
 
+    <div id="progress" aria-live="polite">
+      <div class="ring busy" id="ring">
+        <svg viewBox="0 0 160 160">
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0ea5e9"/><stop offset="1" stop-color="#6ee7b7"/>
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="80" cy="80" r="70"/>
+          <circle class="bar" id="bar" cx="80" cy="80" r="70"/>
+        </svg>
+        <div class="pct"><span id="pctNum">0</span><small>%</small></div>
+      </div>
+      <div class="linebar" id="linebar"><i id="lineFill"></i></div>
+      <div class="steps">
+        <div class="step" data-s="upload">១ Upload</div>
+        <div class="step" data-s="check">២ ពិនិត្យ</div>
+        <div class="step" data-s="split">៣ បំបែក</div>
+        <div class="step" data-s="done">៤ រួចរាល់</div>
+      </div>
+      <button type="button" class="ghost" id="cancelBtn">បោះបង់</button>
+    </div>
+
     <div class="status" id="status"></div>
+    <div id="warnings"></div>
     <div class="results" id="results"></div>
+    <div style="text-align:center"><button type="button" class="ghost" id="resetBtn" style="display:none">បំបែក File ផ្សេងទៀត</button></div>
   </div>
 
   <script>
-    const form = document.getElementById("splitForm");
-    const statusEl = document.getElementById("status");
-    const resultsEl = document.getElementById("results");
-    const submitBtn = document.getElementById("submitBtn");
+  (() => {
+    const MAX_MB = {{ max_mb }};
+    const $ = (id) => document.getElementById(id);
+    const form = $("splitForm"), fileInput = $("fileInput"), drop = $("drop");
+    const statusEl = $("status"), resultsEl = $("results"), warnEl = $("warnings");
+    const submitBtn = $("submitBtn"), cancelBtn = $("cancelBtn"), resetBtn = $("resetBtn");
+    const panel = $("progress"), ring = $("ring"), bar = $("bar"), pctNum = $("pctNum");
+    const linebar = $("linebar"), lineFill = $("lineFill");
+    const CIRC = 2 * Math.PI * 70;
+    bar.style.strokeDasharray = CIRC;
 
+    let file = null, xhr = null, pollTimer = null, raf = null, aborted = false;
+    let target = 0, shown = 0, finished = false;
+
+    /* ───── ជំនួយ ───── */
+    const fmt = (b) => b >= 1048576 ? (b / 1048576).toFixed(2) + " MB" : (b / 1024).toFixed(1) + " KB";
+    function setStatus(msg, cls = "") { statusEl.className = "status " + cls; statusEl.textContent = msg; }
+    function setSteps(active, failAt) {
+      const order = ["upload", "check", "split", "done"];
+      document.querySelectorAll(".step").forEach((el) => {
+        const i = order.indexOf(el.dataset.s), a = order.indexOf(active);
+        el.className = "step" + (failAt === el.dataset.s ? " fail" : i < a || active === "done" ? " done" : i === a ? " active" : "");
+      });
+    }
+
+    /* ───── Animation ភាគរយ 0 → 100% (រលូន) ───── */
+    function tick() {
+      const diff = target - shown;
+      shown += Math.abs(diff) < 0.05 ? diff : diff * 0.12;
+      // មិនបង្ហាញ 100% ទាល់តែ Server ប្រាប់ថារួចរាល់ពិតប្រាកដ
+      const cap = finished ? 100 : 99;
+      const v = Math.max(0, Math.min(shown, cap));
+      const n = Math.floor(v + 0.0001);
+      pctNum.textContent = n;
+      bar.style.strokeDashoffset = CIRC * (1 - v / 100);
+      lineFill.style.width = v + "%";
+      if (finished && Math.abs(target - shown) < 0.1 && v >= 100) { raf = null; return; }
+      raf = requestAnimationFrame(tick);
+    }
+    function startAnim() { if (!raf) raf = requestAnimationFrame(tick); }
+    function setTarget(p) { target = Math.max(target, Math.min(100, p)); startAnim(); }
+
+    /* ───── ជ្រើស File + ពិនិត្យមុន Upload ───── */
+    async function validate(f) {
+      if (!f) return "សូមជ្រើសរើស File Zip ជាមុនសិន";
+      if (!/\.zip$/i.test(f.name)) return "File ត្រូវតែជា .zip តែប៉ុណ្ណោះ";
+      if (f.size === 0) return "File ទទេ (0 byte) — ប្រហែលជា Download មិនទាន់ចប់";
+      if (f.size > MAX_MB * 1048576) return `File ធំពេក (${fmt(f.size)}) អនុញ្ញាតអតិបរមា ${MAX_MB} MB`;
+      try {
+        const head = new Uint8Array(await f.slice(0, 4).arrayBuffer());
+        if (!(head[0] === 0x50 && head[1] === 0x4B))
+          return "File នេះមិនមែនជា Zip ពិតប្រាកដទេ ឬខូចតាំងពីដើម (Header មិនត្រឹមត្រូវ)";
+      } catch (_) { return "មិនអាចអាន File នេះបាន សូមជ្រើសរើសម្ដងទៀត"; }
+      return null;
+    }
+    async function pick(f) {
+      file = f || null;
+      drop.classList.remove("ok", "bad");
+      if (!file) { $("dropTitle").textContent = "ចុចទីនេះ ឬ អូស File មកដាក់"; $("dropSub").textContent = "គាំទ្រ .zip តែប៉ុណ្ណោះ"; return; }
+      const err = await validate(file);
+      $("dropTitle").textContent = file.name;
+      if (err) { drop.classList.add("bad"); $("dropSub").textContent = err; file = null; }
+      else { drop.classList.add("ok"); $("dropSub").textContent = "✓ " + fmt(file.size) + " — ត្រៀមរួចរាល់"; }
+    }
+    drop.addEventListener("click", () => fileInput.click());
+    drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+    fileInput.addEventListener("change", () => pick(fileInput.files[0]));
+    ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
+    ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
+    drop.addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) pick(e.dataTransfer.files[0]); });
+
+    /* ───── Reset UI ───── */
+    function resetUI() {
+      clearTimeout(pollTimer); cancelAnimationFrame(raf); raf = null;
+      target = shown = 0; finished = false; aborted = false;
+      ring.className = "ring busy"; linebar.className = "linebar";
+      pctNum.textContent = "0"; bar.style.strokeDashoffset = CIRC; lineFill.style.width = "0%";
+      resultsEl.innerHTML = ""; warnEl.innerHTML = ""; setStatus("");
+      setSteps("upload");
+    }
+    function fail(msg, step) {
+      clearTimeout(pollTimer);
+      ring.className = "ring fail"; linebar.className = "linebar fail";
+      setSteps(null, step || "upload");
+      setStatus("❌ " + msg, "error");
+      cancelBtn.style.display = "none"; resetBtn.style.display = ""; submitBtn.disabled = false;
+      finished = false; target = shown; // បង្កក %
+    }
+
+    /* ───── Submit ───── */
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      resultsEl.innerHTML = "";
-      statusEl.className = "status";
-      statusEl.textContent = "កំពុង Upload និងបំបែក File សូមរង់ចាំបន្តិច...";
-      submitBtn.disabled = true;
+      const n = parseInt($("parts").value, 10);
+      if (!Number.isInteger(n) || n < 2 || n > 20) { setStatus("ចំនួនភាគត្រូវនៅចន្លោះ ២ ដល់ ២០", "error"); return; }
+      const err = await validate(file || fileInput.files[0]);
+      if (err || !file) { drop.classList.add("bad"); setStatus("❌ " + (err || "សូមជ្រើសរើស File Zip"), "error"); return; }
 
-      const formData = new FormData(form);
+      resetUI();
+      panel.classList.add("show"); submitBtn.disabled = true; resetBtn.style.display = "none"; cancelBtn.style.display = "";
+      setStatus("កំពុង Upload...");
 
-      try {
-        const res = await fetch("/split", { method: "POST", body: formData });
-        const data = await res.json();
+      const fd = new FormData();
+      fd.append("file", file); fd.append("parts", n); fd.append("mode", $("mode").value);
 
-        if (!res.ok) {
-          throw new Error(data.error || "បរាជ័យក្នុងការបំបែក File");
+      xhr = new XMLHttpRequest();
+      xhr.open("POST", "/split");
+      xhr.upload.onprogress = (ev) => {
+        if (!ev.lengthComputable) return;
+        const up = ev.loaded / ev.total;               // Upload = 0 → 50%
+        setTarget(up * 50);
+        setStatus(`កំពុង Upload ${fmt(ev.loaded)} / ${fmt(ev.total)}`);
+      };
+      xhr.upload.onload = () => { setTarget(50); setSteps("check"); setStatus("Upload ចប់ — កំពុងរក្សាទុកនៅ Server..."); };
+      xhr.onerror = () => fail("បណ្តាញមានបញ្ហា ឬ Server មិនឆ្លើយតប។ សូមពិនិត្យ Internet ហើយព្យាយាមម្ដងទៀត");
+      xhr.ontimeout = () => fail("ចំណាយពេលយូរពេក (Timeout)");
+      xhr.onabort = () => { aborted = true; panel.classList.remove("show"); setStatus("បានបោះបង់"); submitBtn.disabled = false; };
+      xhr.onload = () => {
+        let data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (_) {}
+        if (xhr.status !== 202 || !data.job_id) {
+          const m = data.error || (xhr.status === 413 ? `File ធំពេក (អតិបរមា ${MAX_MB} MB)` : `Server មានបញ្ហា (HTTP ${xhr.status})`);
+          return fail(m, "upload");
         }
-
-        statusEl.textContent = `បំបែកបានជោគជ័យចំនួន ${data.parts.length} File៖`;
-        data.parts.forEach((p) => {
-          const extra = p.files_count ? ` • ${p.files_count} files` : "";
-          const div = document.createElement("div");
-          div.className = "item";
-          div.innerHTML = `
-            <div class="item-info">
-              <strong>${p.name}</strong>
-              <span>ទំហំ៖ ${p.size_mb} MB${extra}</span>
-            </div>
-            <a class="dl-btn" href="${p.url}" download>Download</a>
-          `;
-          resultsEl.appendChild(div);
-        });
-      } catch (err) {
-        statusEl.className = "status error";
-        statusEl.textContent = err.message;
-      } finally {
-        submitBtn.disabled = false;
-      }
+        cancelBtn.style.display = "none";
+        poll(data.job_id, 0);
+      };
+      xhr.send(fd);
     });
+    cancelBtn.addEventListener("click", () => { if (xhr) xhr.abort(); });
+    resetBtn.addEventListener("click", () => {
+      resetUI(); panel.classList.remove("show"); resetBtn.style.display = "none";
+      fileInput.value = ""; pick(null);
+    });
+
+    /* ───── Poll ស្ថានភាពពី Server (50 → 100%) ───── */
+    function poll(jobId, errCount) {
+      fetch("/status/" + jobId, { cache: "no-store" })
+        .then(async (r) => { const d = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(d.error || "HTTP " + r.status), { http: r.status }); return d; })
+        .then((d) => {
+          if (d.state === "error") return fail(d.error || "បរាជ័យក្នុងការបំបែក File", "check");
+          const p = d.progress || 0;                    // 0 → 1
+          setTarget(50 + p * 50);
+          setSteps(p < 0.3 ? "check" : "split");
+          setStatus(d.message || "កំពុងដំណើរការ...");
+          if (d.state === "done") return success(d);
+          pollTimer = setTimeout(() => poll(jobId, 0), 400);
+        })
+        .catch((err) => {
+          if (err.http === 404 || err.http === 400) return fail(err.message, "split");
+          if (errCount >= 6) return fail("បាត់ការតភ្ជាប់ជាមួយ Server។ សូមព្យាយាមម្ដងទៀត");
+          pollTimer = setTimeout(() => poll(jobId, errCount + 1), 1000 * (errCount + 1));
+        });
+    }
+
+    function success(d) {
+      finished = true; target = 100; startAnim();
+      ring.className = "ring done"; linebar.className = "linebar done";
+      setSteps("done");
+      setStatus(`✅ បំបែកបានជោគជ័យចំនួន ${d.parts.length} File៖`, "ok");
+      (d.warnings || []).forEach((w) => { const el = document.createElement("div"); el.className = "warn"; el.textContent = "⚠ " + w; warnEl.appendChild(el); });
+      d.parts.forEach((p, i) => {
+        const item = document.createElement("div"); item.className = "item"; item.style.animationDelay = i * 80 + "ms";
+        const info = document.createElement("div"); info.className = "item-info";
+        const strong = document.createElement("strong"); strong.textContent = p.name;
+        const span = document.createElement("span"); span.textContent = `ទំហំ៖ ${p.size_mb} MB` + (p.files_count ? ` • ${p.files_count} files` : "");
+        info.append(strong, span);
+        const a = document.createElement("a"); a.className = "dl-btn"; a.href = p.url; a.setAttribute("download", p.name); a.textContent = "Download";
+        item.append(info, a); resultsEl.appendChild(item);
+      });
+      resetBtn.style.display = ""; submitBtn.disabled = false;
+    }
+
+    // ចាប់ Error JS ដែលមិនរំពឹងទុក កុំឱ្យ UI គាំងស្ងៀម
+    window.addEventListener("unhandledrejection", (e) => { console.error(e.reason); });
+  })();
   </script>
 </body>
 </html>
